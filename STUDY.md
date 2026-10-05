@@ -10,31 +10,31 @@ Thirty stocks, 378 days. A sample covariance is a 30 by 30 matrix, 465 unique nu
 
 A factor model forces the common part to be common. Each name is a set of exposures times a few factor returns, plus a residual that is its own.
 
-\[
-r_t = \alpha + B^\top f_t + \varepsilon_t
-\]
+$$
+r_t = \alpha + B^{\top} f_t + \varepsilon_t
+$$
 
-\[
-\Sigma = B^\top F B + D
-\]
+$$
+\Sigma = B^{\top} F B + D
+$$
 
-\(f_t\) is the factor return on day \(t\). \(B\) is exposures by name. \(F\) is the covariance of the factors. \(D\) is diagonal: specific risk, the variance of \(\varepsilon\). Off-diagonal specific covariance is set to zero. That is the modelling choice. If two names still move together after the factors, this model calls it noise.
+$f_t$ is the factor return on day $t$. $B$ is exposures by name. $F$ is the covariance of the factors. $D$ is diagonal: specific risk, the variance of $\varepsilon$. Off-diagonal specific covariance is set to zero. That is the modelling choice. If two names still move together after the factors, this model calls it noise.
 
-Barra sells this object. \(B\) there is fundamental: size, value, momentum, volatility, industry, country, maintained by the vendor. Axioma and Bloomberg PORT are the same product from other vendors. This script estimates \(B\) by regression on three simulated factors. Same algebra. Different inputs. Say that distinction before anyone else does.
+Barra sells this object. $B$ there is fundamental: size, value, momentum, volatility, industry, country, maintained by the vendor. Axioma and Bloomberg PORT are the same product from other vendors. This script estimates $B$ by regression on three simulated factors. Same algebra. Different inputs. Say that distinction before anyone else does.
 
 ## 2. The known-factor fit
 
-Factors are market, value and momentum. True betas were drawn, then returns were built as \(B^\top f + \varepsilon\), then the true betas were thrown away. The fit does not see them.
+Factors are market, value and momentum. True betas were drawn, then returns were built as $B^{\top} f + \varepsilon$, then the true betas were thrown away. The fit does not see them.
 
 Estimation window: first 378 business days. Design matrix is a column of ones plus the three factors. Ordinary least squares, one regression per name, which is what `lstsq` does on the whole panel at once.
 
 The intercept is alpha. It is stored and not used. An alpha estimated in the same window as the beta is not a forecast. Using it in a mean-variance optimiser would be fitting the noise you just residualised. If asked why there is no expected-return model, that is the answer.
 
-\(D\) is the residual variance by name, sample variance with a degree-of-freedom correction. \(F\) is the sample covariance of the three factor series in the same window. \(\Sigma\) is then the formula above. Portfolio vol is \(\sqrt{w^\top \Sigma w}\), annualised with \(\sqrt{252}\).
+$D$ is the residual variance by name, sample variance with a degree-of-freedom correction. $F$ is the sample covariance of the three factor series in the same window. $\Sigma$ is then the formula above. Portfolio vol is $\sqrt{w^{\top} \Sigma w}$, annualised with $\sqrt{252}$.
 
 ## 3. What the equal-weight book says
 
-Equal weight, \(1/30\) each name.
+Equal weight, $1/30$ each name.
 
 | | |
 |---|---|
@@ -60,7 +60,7 @@ If asked which you would ship: the known-factor model, when you need to tell a p
 
 ## 5. The book construction, and the constraint that failed
 
-The posting asks for an optimisation toolkit. The first attempt was a quadratic programme: minimise \(w^\top \Sigma w\), long only, name cap 8%, market exposure at most 0.4. The solver returned without a feasible point.
+The posting asks for an optimisation toolkit. The first attempt was a quadratic programme: minimise $w^{\top} \Sigma w$, long only, name cap 8%, market exposure at most 0.4. The solver returned without a feasible point.
 
 That is the result, not a bug. True market betas were drawn from 0.6 to 1.4. A long-only book cannot have a market exposure below the lowest beta it is allowed to hold. With an 8% cap you must hold at least 13 names. The 13 lowest betas still average well above 0.4. The constraint was infeasible. Shipping a solver output that ignored that would have been worse than the failure.
 
@@ -80,7 +80,7 @@ Inverse-volatility weighting, tried in an earlier version, did almost nothing. I
 
 ## 6. Tail risk and the performance numbers
 
-All of these are on the last 126 days, which were not used to estimate \(B\), \(F\) or \(D\). The low-beta weights are applied to that window.
+All of these are on the last 126 days, which were not used to estimate $B$, $F$ or $D$. The low-beta weights are applied to that window.
 
 | | |
 |---|---|
@@ -92,15 +92,15 @@ All of these are on the last 126 days, which were not used to estimate \(B\), \(
 
 Historical VaR is the loss at the 5% quantile of daily portfolio returns, sign flipped. It is not a parametric VaR. A normal 95% VaR would be about 1.65 daily standard deviations, roughly 1.5% here. The historical number is close. On 126 days the 5% quantile is six days. Say the sample is short.
 
-The stress is a factor shock, not a replay. Market return set to minus three estimation-window standard deviations, value to minus two, momentum unshocked. Portfolio loss is exposure times shock. Specific risk is not in that number. A name can gap for a reason that is not in \(F\). The stress will not see it.
+The stress is a factor shock, not a replay. Market return set to minus three estimation-window standard deviations, value to minus two, momentum unshocked. Portfolio loss is exposure times shock. Specific risk is not in that number. A name can gap for a reason that is not in $F$. The stress will not see it.
 
-Sharpe is mean over standard deviation, times \(\sqrt{252}\). It is −2.6 because the seed produced a falling held-out path. It is not a strategy result. Do not walk into the interview leading with it. If asked, say the sign is the simulation, and the object you would defend is the risk decomposition.
+Sharpe is mean over standard deviation, times $\sqrt{252}$. It is −2.6 because the seed produced a falling held-out path. It is not a strategy result. Do not walk into the interview leading with it. If asked, say the sign is the simulation, and the object you would defend is the risk decomposition.
 
 Drawdown is the worst peak-to-trough of the cumulative sum of daily returns. −20% on a 126-day window with a negative drift is ordinary. It is not a tail-risk finding.
 
 ## 7. What Barra does that this does not
 
-Barra's \(B\) is not a regression on a factor return you supply. Exposures are built from fundamentals and then standardised. Factor returns are estimated by cross-sectional regression each day. \(F\) is a time-series covariance of those factor returns, with a weighting scheme and a correlation adjustment. Specific risk is a separate model, not the residual variance of one window. Industries and countries are in the factor set, so a sector bet shows up as a factor, not as specific risk.
+Barra's $B$ is not a regression on a factor return you supply. Exposures are built from fundamentals and then standardised. Factor returns are estimated by cross-sectional regression each day. $F$ is a time-series covariance of those factor returns, with a weighting scheme and a correlation adjustment. Specific risk is a separate model, not the residual variance of one window. Industries and countries are in the factor set, so a sector bet shows up as a factor, not as specific risk.
 
 Using Barra means loading a book and reading the exposure and the marginal contribution to risk. Building Barra means the vendor's research group. This repo is neither. It is the algebra in the middle.
 
